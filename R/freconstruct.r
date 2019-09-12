@@ -1,40 +1,19 @@
 #--------------------------------------------------------------
-#' Reconstruction sage of FSSA
+#' Reconstruction Stage of Functional Singular Spectrum Analysis
 #'
-#' This is a function for the reconstructing functional time series from
-#'functional singular spectrum objects (including Grouping and
-#' Hankelization steps). The output is a list of functional time series corresponds to each group.
-#' @return a named list of reconstructed functional time series in each groups and
-#' a numeric vector of eigenvalues.
+#' This is a function for reconstructing functional time series (\code{\link{fts}}) objects from functional singular spectrum analysis
+#' (\code{\link{fssa}}) objects (including Grouping and
+#' Hankelization steps). The function performs the reconstruction step for univariate functional singular spectrum analysis (ufssa) or multivariate functional singular spectrum analysis (mfssa)
+#' depending on whether or not the input is an \code{\link{fssa}} object from ufssa or mfssa.
+#' @return a named list of objects of class \code{\link{fts}} that are reconstructed as according to the specified groups and
+#' a numeric vector of eigenvalues
 #' @param U an object of class \code{\link{fssa}}
-#' @param group a list of numeric vectors, each vector includes indices of such elementary components
-#' of a group used for reconstruction.
-#' @seealso \code{\link{fssa}}
-
-#' @importFrom fda fd
-
+#' @param group a list of numeric vectors, each vector includes indices of elementary components
+#' of a group used for reconstruction
+#' @note refer to \code{\link{fssa}} for an example on how to run this function starting from \code{\link{fssa}} objects
+#' @seealso \code{\link{fssa}}, \code{\link{fts}},
 #' @export
 freconstruct <- function(U, group = as.list(1L:10L)) {
-  N <- U$N
-  Y <- U$Y
-  d <- nrow(U[[1]]$coefs)
-  L <- U$L
-  K <- N - L + 1L
-  basis <- U[[1]]$basis
-  m <- length(group)
-  basis <- U[[1]]$basis
-  out <- list()
-  for (i in 1L:m) {
-    Cx <- matrix(NA, nrow = d, ncol = N)
-    g <- group[[i]]
-    S <- 0L
-    for (j in 1L:length(g)) S <- S +
-      fproj(U, g[j], d, K, L, Y)
-    S <- fH(S, d)
-    Cx[, 1L:L] <- S[, 1L, ]
-    Cx[, L:N] <- S[, ,L]
-    out[[i]] <- fd(Cx, basis)
-  }
-  out$values <- sqrt(U$values)
+  if(is.fd(U[[1]])) out <- ufreconstruct(U,group) else out <- mfreconstruct(U,group)
   return(out)
 }

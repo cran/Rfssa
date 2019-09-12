@@ -2,16 +2,22 @@
 % Please edit documentation in R/wplot.R
 \name{wplot}
 \alias{wplot}
-\title{Plot of W-correlations}
+\title{Weighted-Correlations Plot}
 \usage{
-wplot(W)
+wplot(W, cuts = 20)
 }
 \arguments{
-\item{W}{a W-correlation matrix.}
+\item{W}{a w-correlation matrix}
+
+\item{cuts}{an integer that is the number of levels the range of w-correlation values will be divided into}
 }
 \description{
-Display W-correlation matrix of a single components.
+This function displays a plot of the weighted-correlation (w-correlation) matrix of functional time series (\code{\link{fts}}) objects that were reconstructed
+from functional singular spectrum analysis (\code{\link{fssa}}) objects.
+}
+\note{
+refer to \code{\link{fwcor}} for an example on how to run this function starting from a w-correlation matrix
 }
 \seealso{
-\code{\link{fssa}}
+\code{\link{fssa}}, \code{\link{freconstruct}}, \code{\link{fts}}, \code{\link{fwcor}}
 }

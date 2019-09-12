@@ -48,5 +48,3 @@ arma::mat H (arma::mat A){
   if(cont)  A=A.t();
   return A;
 }
-
-
