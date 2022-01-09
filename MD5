@@ -1,6 +1,6 @@
-e773459c5269d017b4f21ff7d1283d89 *DESCRIPTION
+3961e732e12a538c809b108abf2b0103 *DESCRIPTION
 c51013bf52f614708ec8140e2681beb3 *NAMESPACE
-81a5c9727556f0171cf35aa13670b5c2 *NEWS.md
+b498f9a735c34fccba27853196796c90 *NEWS.md
 074426ba5073d8b8bf9a0c06a724be24 *R/Callcenter.R
 753aa11762c969e7935fdae35b79fcbb *R/FTSclass.R
 a1e88383e0e6d6248e1fd2be696921d6 *R/Jambi.R
@@ -28,6 +28,7 @@ cde18e306d7b2e5efa6e0c7d0520b5f6 *R/shinyMFSSA.R
 059a7fa2b3290bd3b702ec0fc4ad794d *R/wcor.r
 521c37ac4b680ec10171de6dc6c642ac *R/wplot.R
 f29642c7c9a25810c97696fe00946382 *README.md
+9bc153f1ac120e45fbd86143e330858c *inst/include/Rfssa.h
 dcbd997cb956f49374c845989d0fecd0 *inst/shiny/rmd/report.Rmd
 fedfe25234a0d932545c1726bc148453 *man/Callcenter.Rd
 a793e6c9ea4cbe1e41d8f1e30f9f4d3b *man/Jambi.Rd
@@ -53,7 +54,7 @@ b6e977921ff121fe3f15af55a61db23a *src/HLinprod.cpp
 785b54f3a6657d66fedca2d25e3a9372 *src/HpLinprod.cpp
 03c5781c3b8ab058ff3f8563b810b424 *src/Makevars
 13b03cd3dd721948c30479759060bb49 *src/Makevars.win
-59f316c443fb09c0dfed897d2b5dc7b2 *src/RcppExports.cpp
+c4da3f825e99d985d6391c708a6649f2 *src/RcppExports.cpp
 d5c7a13d5431a7e9d61c2ee25a685948 *src/Utils.cpp
-1692901cdaf945818e118f98be76ce56 *src/mwinprod.cpp
+20857728fea3b90c751dac195ca11518 *src/mwinprod.cpp
 46f2a1df5ad1d19b93391f5b91a48fe6 *src/winprod.cpp
