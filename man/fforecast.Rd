@@ -2,153 +2,114 @@
 % Please edit documentation in R/fforecast.R
 \name{fforecast}
 \alias{fforecast}
-\title{Functional Singular Spectrum Analysis Recurrent Forecasting and Vector Forecasting}
+\title{Functional Singular Spectrum Analysis Recurrent and Vector Forecasting}
 \usage{
-fforecast(U, groups = list(c(1)), h = 1, method = "recurrent", tol = 10^-3)
+fforecast(
+  U,
+  groups,
+  len = 1,
+  method = "recurrent",
+  only.new = TRUE,
+  tol = NULL
+)
 }
 \arguments{
-\item{U}{An object of class \code{\link{fssa}} that holds the decomposition.}
+\item{U}{an object of class \code{\link{fssa}} holding the decomposition.}
 
-\item{groups}{A list of numeric vectors where each vector includes indices of elementary components of a group used for reconstruction and forecasting.}
+\item{groups}{a list of numeric vectors where each vector includes indices
+of elementary components of a group used for reconstruction and
+forecasting.}
 
-\item{h}{An integer that specifies the forecast horizon.}
+\item{len}{integer, the desired length of the forecasted FTS.}
 
-\item{method}{A character string specifying the type of forecasting to perform either \code{"recurrent"} or \code{"vector"}.}
+\item{method}{a character string specifying the type of forecasting to perform:
+- "recurrent" for FSSA R-forecasting.
+- "vector" for FSSA V-forecasting.}
 
-\item{tol}{A double specifying the amount of tolerated error in the approximation of the matrix that corresponds with the operator formed using a Neumann series leveraged in both forecasting algorithms; see Trinka et. al. (2021) for more details.}
+\item{only.new}{logical, if 'TRUE' then only forecasted FTS are returned, whole FTS otherwise.}
+
+\item{tol}{a double specifying the tolerated error in the approximation of
+the matrix used in forecasting algorithms.}
 }
 \value{
-A list of objects of class \code{\link{fts}} where each fts corresponds to a forecasted group.
+An object of class `fforecast` which is a list of objects of class
+        \code{\link{funts}}, where each one corresponds to a forecasted group.
 }
 \description{
-This function performs functional singular spectrum analysis (FSSA) recurrent forecasting (FSSA R-forecasting) or vector forecasting (FSSA V-forecasting) of univariate or multivariate functional time series (\code{\link{fts}}) observed over a one-dimensional domain.
+Perform functional singular spectrum analysis (FSSA) recurrent forecasting
+(FSSA R-forecasting) or vector forecasting (FSSA V-forecasting) on univariate
+or multivariate functional time series (\code{\link{funts}}) observed over a
+one-dimensional domain.
 }
 \examples{
 \dontrun{
-# FSSA Forecasting
-require(Rfssa)
-load_github_data("https://github.com/haghbinh/Rfssa/blob/master/data/Callcenter.RData")
-## Define functional objects
-D <- matrix(sqrt(Callcenter$calls), nrow = 240)
-N <- ncol(D)
-time <- substr(seq(ISOdate(1999, 1, 1), ISOdate(1999, 12, 31), by = "day"),1,10)
-K <- nrow(D)
-u <- seq(0, K, length.out = K)
-d <- 22
-## Define functional time series
-Y <- Rfssa::fts(list(D), list(list(d, "bspline")), list(u),time)
-plot(Y, mains = c("Call Center Data Line Plot"),
-xlabels = "Time (6 minutes aggregated)",
-ylabels = "Sqrt of Call Numbers",type="line",
-xticklabels = list(c("00:00","06:00","12:00","18:00","24:00")),xticklocs =
- list(c(1,60,120,180,240)))
-## Perform FSSA decomposition
-L <- 28
-U <- fssa(Y, L)
-groups <- list(1, 2:3, 4:5, 6:7, 1:7)
-## Perform FSSA R-forecast and FSSA V-forecast
-pr_R <- fforecast(U = U, groups = groups, h = 30,
-method = "recurrent", tol = 10^-3)
-plot(pr_R[[1]], mains = "Call Center Mean Component Forecast",
-xlabels = "Time (6 minutes aggregated)",
-     ylabels = "Sqrt of Call Numbers",type="line",
-     xticklabels = list(c("00:00","06:00","12:00","18:00","24:00")),xticklocs =
-       list(c(1,60,120,180,240)))
-plot(pr_R[[2]], mains = "Call Center First Periodic Component Forecast",
-xlabels = "Time (6 minutes aggregated)",
-     ylabels = "Sqrt of Call Numbers",type="line",
-     xticklabels = list(c("00:00","06:00","12:00","18:00","24:00")),xticklocs =
-       list(c(1,60,120,180,240)))
-plot(pr_R[[3]], mains = "Call Center Second Periodic Component Forecast",
-xlabels = "Time (6 minutes aggregated)",
-     ylabels = "Sqrt of Call Numbers",type="line",
-     xticklabels = list(c("00:00","06:00","12:00","18:00","24:00")),xticklocs =
-       list(c(1,60,120,180,240)))
-plot(pr_R[[4]], mains = "Call Center Third Periodic Component Forecast",
-xlabels = "Time (6 minutes aggregated)",
-     ylabels = "Sqrt of Call Numbers",type="line",
-     xticklabels = list(c("00:00","06:00","12:00","18:00","24:00")),xticklocs =
-       list(c(1,60,120,180,240)))
-plot(Y, mains = c("Call Center Data Line Plot"),
-xlabels = "Time (6 minutes aggregated)",
-     ylabels = "Sqrt of Call Numbers",type="line",
-     xticklabels = list(c("00:00","06:00","12:00","18:00","24:00")),xticklocs =
-       list(c(1,60,120,180,240)))
-plot(pr_R[[5]], mains = "Call Center Extracted Signal Forecast",
-xlabels = "Time (6 minutes aggregated)",
-     ylabels = "Sqrt of Call Numbers",type="line",
-     xticklabels = list(c("00:00","06:00","12:00","18:00","24:00")),xticklocs =
-       list(c(1,60,120,180,240)))
+data("Callcenter")
+U <- fssa(Callcenter, L = 28)
+groups <- list(1, 1:7)
 
-pr_V <- fforecast(U = U, groups = groups, h = 30, method = "vector", tol = 10^-3)
-plot(pr_V[[1]], mains = "Call Center Mean Component Forecast",
-xlabels = "Time (6 minutes aggregated)",
-     ylabels = "Sqrt of Call Numbers",type="line",
-     xticklabels = list(c("00:00","06:00","12:00","18:00","24:00")),xticklocs =
-       list(c(1,60,120,180,240)))
-plot(pr_V[[2]], mains = "Call Center First Periodic Component Forecast",
-xlabels = "Time (6 minutes aggregated)",
-     ylabels = "Sqrt of Call Numbers",type="line",
-     xticklabels = list(c("00:00","06:00","12:00","18:00","24:00")),xticklocs =
-       list(c(1,60,120,180,240)))
-plot(pr_V[[3]], mains = "Call Center Second Periodic Component Forecast",
-xlabels = "Time (6 minutes aggregated)",
-     ylabels = "Sqrt of Call Numbers",type="line",
-     xticklabels = list(c("00:00","06:00","12:00","18:00","24:00")),xticklocs =
-       list(c(1,60,120,180,240)))
-plot(pr_V[[4]], mains = "Call Center Third Periodic Component Forecast",
-xlabels = "Time (6 minutes aggregated)",
-     ylabels = "Sqrt of Call Numbers",type="line",
-     xticklabels = list(c("00:00","06:00","12:00","18:00","24:00")),xticklocs =
-       list(c(1,60,120,180,240)))
-plot(Y, mains = c("Call Center Data Line Plot"),
-xlabels = "Time (6 minutes aggregated)",
-     ylabels = "Sqrt of Call Numbers",type="line",
-     xticklabels = list(c("00:00","06:00","12:00","18:00","24:00")),xticklocs =
-       list(c(1,60,120,180,240)))
-plot(pr_V[[5]], mains = "Call Center Extracted Signal Forecast",
-xlabels = "Time (6 minutes aggregated)",
-     ylabels = "Sqrt of Call Numbers",type="line",
-     xticklabels = list(c("00:00","06:00","12:00","18:00","24:00")),xticklocs =
-       list(c(1,60,120,180,240)))
+## Perform FSSA R-forecast
+pr_R <- fforecast(
+  U = U, groups = groups, only.new = FALSE,
+  len = 30, method = "recurrent"
+)
 
-# MFSSA Forecasting
-require(Rfssa)
-load_github_data("https://github.com/haghbinh/Rfssa/blob/master/data/Jambi.RData")
-## Raw image data
-NDVI <- Jambi$NDVI
-EVI <- Jambi$EVI
-time <- Jambi$Date
+plot(pr_R,  group_index = 1 )
+
+
+plotly_funts(pr_R[[2]], main = "group = '1:7'")
+
+## Perform FSSA V-forecast
+pr_V <- fforecast(U = U, groups = groups, len= 30, method = "vector")
+
+plot(pr_V, group_index = 1)
+
+plotly_funts(pr_V[[2]], type = "3Dline" , main = "group = '1:7'")
+
+# Multivariate forecasting example:
+data("Montana")
+time <- Montana$time
+grid <- list(0:23, list(1:33, 1:33))
+montana <- eval.funts(Montana, argvals = grid)
+montana[[2]] <- array(
+  scale(montana[[2]][, , ],
+    center = min(montana[[2]][, , ]),
+    scale = max(montana[[2]][, , ]) - min(montana[[2]][, , ])
+  ),
+  dim = c(33, 33, 133)
+)
 ## Kernel density estimation of pixel intensity
-D0_NDVI <- matrix(NA, nrow = 512, ncol = 448)
-D0_EVI <- matrix(NA, nrow = 512, ncol = 448)
-for (i in 1:448) {
-  D0_NDVI[, i] <- density(NDVI[, , i], from = 0, to = 1)$y
-  D0_EVI[, i] <- density(EVI[, , i], from = 0, to = 1)$y
-}
-## Define functional objects
-d <- 11
-D <- list(D0_NDVI, D0_EVI)
-B <- list(list(d, "bspline"),list(d + 4, "fourier"))
-U <- list(c(0, 1), c(0, 1))
-Y <- Rfssa::fts(D, B, U,time)
-plot(Y,mains = c("NDVI","EVI"),xlabels = c("NDVI","EVI"),
-     ylabels = c("NDVI Density","EVI Density"),type="line",
-     xticklabels = list(c("0","1"),c("0","1")),xticklocs =
-       list(c(0,512),c(0,512)))
-U <- fssa(Y = Y, L = 45)
-groups <- list(c(1:4), c(1), c(2:3), c(4))
-pr_R <- fforecast(U = U, groups = groups, h = 1, method = "recurrent")
-plot(pr_R[[1]])
-plot(pr_R[[2]])
-plot(pr_R[[3]])
-plot(pr_R[[4]])
+NDVI <- matrix(NA, nrow = 512, ncol = 133)
+for (i in 1:133) NDVI[, i] <- (density(montana[[2]][, , i], 0, 1)$y)
 
-pr_V <- fforecast(U = U, groups = groups, h = 1, method = "vector")
-plot(pr_V[[1]])
-plot(pr_V[[2]])
-plot(pr_V[[3]])
-plot(pr_V[[4]])
+## Define functional objects
+bs1 <- Montana$basis[[1]]
+
+require(fda)
+bs2 <- create.bspline.basis(nbasis = 15)
+Y <- funts(X = list(montana[[1]], NDVI), basisobj = list(bs1, bs2),
+            vnames = c("Temperature", "NDVI Density"),
+            dnames = c("Time", "NDVI"),
+            tname = "Date")
+
+plotly_funts(Y,
+  main = c("Temperature", "NDVI"),
+  xticklocs = list(c(0, 6, 12, 18, 23), seq(1, 512, len = 9)),
+  xticklabels = list(c(0, 6, 12, 18, 23), seq(0, 1, len = 9))
+)
+
+U <- fssa(Y = Y, L = 45)
+plotly_funts(U$Lsingf[[1]])
+plot(U$Lsingf[[2]])
+
+groups <- list(1, 1:3)
+pr_R <- fforecast(U = U, groups = groups,
+                   only.new = FALSE, len = 10, method = "recurrent")
+plot(pr_R)
+plotly_funts(pr_R[[2]], main = "Recurrent method, group = '1:3'")
+
+pr_V <- fforecast(U = U, groups = groups, len = 10, method = "vector")
+plot(pr_V, group_index = 1)
+plotly_funts(pr_V[[2]], main = "Vector method, group = '1:3'")
 }
 
 }

@@ -1,40 +1,50 @@
-#--------------------------------------------------------------
 #' Plot Functional Singular Spectrum Analysis Objects
 #'
-#'  This is a plotting method for objects of class functional singular spectrum analysis (\code{\link{fssa}}). The method is designed to help the user make decisions
-#'  on how to do the grouping stage of univariate or multivariate functional singular spectrum analysis.
+#' This function is a plotting method for objects of class functional singular spectrum analysis (\code{\link{fssa}}).
+#' It aids users in making decisions during the grouping stage of univariate or multivariate functional singular spectrum analysis.
 #'
 #' @param x An object of class \code{\link{fssa}}.
-#' @param d An integer which is the number of elementary components in the plot.
-#' @param idx A vector of indices of eigen elements to plot.
+#' @param d An integer representing the number of elementary components to plot.
+#' @param idx A vector of indices specifying which eigen elements to plot.
 #' @param idy A second vector of indices of eigen elements to plot (for \code{type="paired"}).
-#' @param groups A list or vector of indices determines grouping used for the decomposition(for \code{type="wcor"}).
-#' @param contrib A logical where if the value is \code{TRUE} (the default), the contribution of the component to the total variance is displayed.
-#' @param type The type of plot to be displayed where possible types are:
-#' \itemize{
-#' \item \code{"values"} - plot the square-root of singular values (default)
-#' \item \code{"paired"} - plot the pairs of eigenfunction's coefficients (useful for the detection of periodic components)
-#' \item \code{"wcor"} - plot the W-correlation matrix for the reconstructed objects
-#' \item \code{"vectors"} - plot the eigenfunction's coefficients (useful for the detection of period length)
-#' \item \code{"lcurves"} - plot of the eigenfunctions (useful for the detection of period length)
-#' \item \code{"lheats"} - heatmap plot of the eigenfunctions which can be used for \code{\link{fts}} variables observed over one or two-dimensional domains (useful for the detection of meaningful patterns)
-#' \item \code{"periodogram"} - periodogram plot (useful for the detecting the frequencies of oscillations in functional data).
+#' @param groups A list or vector of indices determining the grouping used for decomposition (for \code{type="wcor"}).
+#' @param lwd A vector of line widths.
+#' @param contrib A logical value. If \code{TRUE} (default), it displays the component's contribution to the total variance.
+#' @param type The type of plot to be displayed. Possible types include:
+#'   \itemize{
+#'     \item \code{"values"} - Plot the square-root of singular values (default).
+#'     \item \code{"paired"} - Plot pairs of eigenfunction's coefficients (useful for detecting periodic components).
+#'     \item \code{"wcor"} - Plot the W-correlation matrix for the reconstructed objects.
+#'     \item \code{"vectors"} - Plot the eigenfunction's coefficients (useful for detecting period length).
+#'     \item \code{"lcurves"} - Plot eigenfunctions (useful for detecting period length).
+#'     \item \code{"lheats"} - Heatmap plot of eigenfunctions, usable for \code{\link{funts}} variables observed over one or two-dimensional domains (useful for detecting meaningful patterns).
+#'     \item \code{"periodogram"} - Periodogram plot (useful for detecting the frequencies of oscillations in functional data).
+#'   }
+#' @param vars A numeric value specifying the variable number (used in plotting MFSSA \code{"lheats"} or \code{"lcurves"}).
+#' @param ylab A character vector representing the names of variables.
+#' @param main The main plot title.
+#' @param ... Additional arguments to be passed to methods, such as graphical parameters.
+#' @seealso \code{\link{fssa}}, \code{\link{plotly_funts}}
+#'
+#' @examples
+#' \dontrun{
+#' data("Callcenter")
+#' L <- 28
+#' U <- fssa(Callcenter, L)
+#' plot(U, type = "values", d = 10)
+#' plot(U, type = "vectors", d = 4)
+#' plot(U, type = "paired", d = 6)
+#' plot(U, type = "lcurves", d = 4, vars = 1)
+#' plot(U, type = "lheats", d = 4)
+#' plot(U, type = "wcor", d = 10)
 #' }
-#' @param vars A numeric specifying the variable number (can be used in plotting MFSSA \code{"lheats"} or \code{"lcurves"}).
-#' @param ylab The character vector of name of variables.
-#' @param main The main plot title
-#' @param color_palette A string specifying the color palette that is offered by the ggplot2 package to be used when plotting left singular functions corresponding with \code{\link{fts}} variables observed over two-dimensional domains.
-#' @param reverse_color_palette A boolean specifying if the color palette scale should be reversed.
-#' @param ... Arguments to be passed to methods, such as graphical parameters.
-#' @seealso \code{\link{fssa}}, \code{\link{plot.fts}}
-#' @note See \code{\link{fssa}} examples.
+#'
 #' @export
 plot.fssa <- function(x, d = length(x$values),
                       idx = 1:d, idy = idx + 1, contrib = TRUE,
-                      groups = as.list(1:d),
-                      type = "values", vars = NULL, ylab = NA, main = NA,
-                      color_palette = "RdYlBu", reverse_color_palette = FALSE, ...) {
-  p <- length(x$Y@C)
+                      groups = as.list(1:d), lwd = 2,
+                      type = "values", vars = NULL, ylab = NA, main = NA, ...) {
+  p <- length(x$Y$dimSupp)
   A <- ((x$values) / sum(x$values))
   pr <- round(A * 100L, 2L)
   idx <- sort(idx)
@@ -53,185 +63,112 @@ plot.fssa <- function(x, d = length(x$values),
   K <- N - L + 1L
 
   if (type == "values") {
-    if(is.na(main)) main = "Singular Values";
+    if (is.na(main)) main <- "Singular Values"
     val <- sqrt(x$values)[idx]
-    graphics::plot(idx, val,
-      type = "o", lwd = 3L,
-      col = "dodgerblue3", pch = 19L,
-      cex.axis = 1.7, cex.main = 2, cex.lab = 1.8,
-      cex = 0.8, main = main,
-      ylab = "norms", xlab = "Components"
+    data_df <- data.frame(idx, val)
+    p1 <- xyplot(val ~ idx,
+      data = data_df, type = "o", lwd = lwd, col = "dodgerblue3", pch = 19, cex = 1.2,
+      scales = list(cex.axis = 1.7, cex.main = 2, cex.lab = 1.8, cex = 0.8),
+      main = main, xlab = "Components", ylab = "norms", grid = TRUE
     )
+    graphics::plot(p1)
   } else if (type == "wcor") {
     W <- fwcor(x, groups)
-    wplot(W,main=main)
+    wplot(W, main = main)
   } else if (type == "lheats" || type == "lcurves") {
-    flag_1 <- 0
-    flag_2 <- 0
     if (is.null(vars)) vars <- 1:p
-
     for (j in 1:length(vars)) {
-      if (type == "lheats" && ncol(x$Y@grid[[vars[j]]]) == 1) {
-        flag_1 <- 1
-        n <- nrow(x$Y@grid[[vars[j]]])
-        z <- c(0)
+      if (type == "lheats") {
+        z <- NULL
         for (i in idx) {
-          if (class(x[[i]])[[1]]!="list") {
+          if (class(x[[i]])[[1]] != "list") {
+            n <- nrow(x[[i]])
             z <- c(z, as.vector(t(x[[i]])))
           } else {
+            n <- nrow(x[[i]][[vars[j]]])
             z <- c(z, as.vector(t(x[[i]][[vars[j]]])))
           }
         }
-        z <- z[2:length(z)]
         D0 <- expand.grid(
           x = 1L:L,
-          y = 1L:n, groups = idx
+          y = 1L:n,
+          groups = idx
         )
         D0$z <- z
         D0$groups <- factor(rep(main1,
           each = L * n
         ), levels = main1)
-        if(is.na(main)) main <- "Singular functions"
+        if (is.na(main)) main <- "Singular functions"
         if (p > 1) {
           main <- paste(
             main, "of variable",
             ifelse(is.na(ylab), vars[j], ylab)
           )
         }
-        p1 <- lattice::levelplot(z ~ x *
-          y | groups,
-        data = D0, par.strip.text=list(cex=1.2),
-        colorkey = list(labels=list(cex=1.2)), cuts = 50L,
-        xlab = "", ylab = "",
-        scales = list(x = list(cex=c(1.2,1.2)),
-                      y = list(cex=c(1.2, 1.2), # increase font size
-                               alternating=1,   # axes labels left/bottom
-                               tck = c(1,0))),
-        aspect = "xy", as.table = TRUE,
-        main = list(main,cex=1.5),
-        col.regions = grDevices::heat.colors(100)
+        p1 <- levelplot(
+          z ~ x *
+            y | groups,
+          data = D0, par.strip.text = list(cex = 1.2),
+          colorkey = list(labels = list(cex = 1.2)), cuts = 50L,
+          xlab = "", ylab = "",
+          scales = list(
+            x = list(cex = c(1.2, 1.2)),
+            y = list(
+              cex = c(1.2, 1.2), # increase font size
+              alternating = 1, # axes labels left/bottom
+              tck = c(1, 0)
+            )
+          ), as.table = TRUE,
+          main = list(main, cex = 1.5),
+          col.regions = grDevices::heat.colors(100),
+          ...
         )
-        main = NA
-
+        main <- NA
+        graphics::plot(p1)
+      } else if (type == "lcurves" && x$Y$dimSupp[[vars[j]]] == 1) {
+        z <- NULL
+        for (i in idx) {
+          if (class(x[[i]])[[1]] != "list") {
+            n <- nrow(x[[i]])
+            z <- c(z, as.vector((x[[i]])))
+          } else {
+            n <- nrow(x[[i]][[vars[j]]])
+            z <- c(z, as.vector((x[[i]][[vars[j]]])))
+          }
+        }
+        if (is.na(main)) main <- "Singular functions"
+        if (p > 1) {
+          main <- paste(
+            main, "of variable",
+            ifelse(is.na(ylab), vars[j], ylab)
+          )
+        }
+        D0 <- data.frame(z = z, x = 1:n)
+        D0$curves <- rep(as.character(1:L), each = n)
+        D0$groups <- factor(rep(main1, each = L * n), levels = main1)
+        p1 <- xyplot(z ~ x | groups,
+          group = D0$curves, lwd = lwd,
+          type = "l", data = D0, par.strip.text = list(cex = 1.2),
+          cuts = 50L, xlab = "", ylab = "",
+          scales = list(
+            x = list(cex = c(1.2, 1.2)),
+            y = list(
+              cex = c(1.2, 1.2), # increase font size
+              alternating = 1, # axes labels left/bottom
+              tck = c(1, 0)
+            )
+          ),
+          as.table = TRUE,
+          main = list(main, cex = 1.5), ...
+        )
 
         graphics::plot(p1)
-      } else if (type == "lheats" && ncol(x$Y@grid[[vars[j]]]) == 2) {
-        flag_2 <- 1
-        time <- NULL
-        for (i in idx) {
-          if (class(x[[i]])[[1]]!="list") {
-            temp_df = data.frame(matrix(ncol = 3, nrow = ncol(x[[1]])*nrow(x[[1]])))
-            colnames(temp_df)=c("z","x","y")
-            temp_df$z = c(x[[i]])
-            y <- tibble::as_tibble(temp_df)
-          } else {
-            temp_df = data.frame(matrix(ncol = 3, nrow = ncol(x[[1]][[vars[j]]])*nrow(x[[1]][[vars[j]]])))
-            colnames(temp_df)=c("z","x","y")
-            temp_df$z = c(x[[i]][[vars[j]]])
-            y <- tibble::as_tibble(temp_df)
-          }
-          temp_1 = rev(rep(x$Y@grid[[vars[j]]][, 1], L))
-          temp_2 = rep(x$Y@grid[[vars[j]]][, 2], L)
-          y[,2] <- temp_2
-          y[,3] <- temp_1
-          y$Time <- as.factor(rep(1:L, each = nrow(x$Y@grid[[vars[j]]])))
-          direction <- 1
-          if(isTRUE(reverse_color_palette)) direction <- -1;
-         print(ggplotly(ggplot(y, aes_string("x", "y", fill = "z", frame = "Time")) +
-            geom_tile() +
-              theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-                   panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-              scale_fill_distiller(palette = color_palette, direction = direction) +
-            ggtitle(paste("Singular function", as.character(i), "of variable", as.character(vars[j]))) +
-               scale_x_continuous(name = 'x') + scale_y_continuous(name = 'y')
-            ))
-        }
-
-      } else if (type == "lcurves" && ncol(x$Y@grid[[vars[j]]]) == 1) {
-        flag_1 <- 1
-        col2 <- grDevices::rainbow(L)
-        d1 <- floor(sqrt(d_idx))
-        d2 <- ceiling(d_idx / d1)
-        graphics::par(
-          mfrow = c(d1, d2),
-          mar = c(2, 2, 3, 1), oma = c(2, 2, 7, 1), cex.main = 2
-        )
-        if(is.na(main)) main <- "Singular functions"
-        if (p > 1) {
-          main <- paste(
-            main, "of variable",
-            ifelse(is.na(ylab), vars[j], ylab)
-          )
-        }
-
-        for (i in 1:d_idx) {
-          if (class(x[[i]])[[1]]!="list") {
-
-              graphics::matplot(x$Y@grid[[j]], x[[idx[i]]],
-                                type = "l",
-                                lty = 1, xlab = "", ylim = range(x[[idx[i]]]),
-                                main = main1[i], ylab = "",
-                                lwd = 2, col = col2, cex.main = 2.7,
-                                cex.axis = 2.4
-              )
-
-
-            graphics::title(list(main,cex=2), outer = TRUE)
-            main = NA
-          } else {
-            graphics::matplot(x$Y@grid[[vars[j]]], x[[idx[i]]][[vars[j]]],
-              type = "l",
-              lty = 1, xlab = "", ylim = range(x[[idx[i]]][[vars[j]]]),
-              main = main1[i], ylab = "",
-              lwd = 2, col = col2, cex.main = 2.7,
-              cex.axis = 2.4
-            )
-            graphics::title(list(main,cex=2), outer = TRUE)
-            main = NA
-          }
-        }
-
-        graphics::par(mfrow = c(1, 1))
-      } else if (type == "lcurves" && ncol(x$Y@grid[[vars[j]]]) == 2) {
-        flag_2 <- 1
-        time <- NULL
-        warning("\"lcurves\" plotting option defined only for variables observed over one-dimensional domains. Plotting variable singular functions using \"lheats\".")
-        for (i in idx) {
-          if (class(x[[i]])[[1]]!="list") {
-            temp_df = data.frame(matrix(ncol = 3, nrow = ncol(x[[1]])*nrow(x[[1]])))
-            colnames(temp_df)=c("z","x","y")
-            temp_df$z = c(x[[i]])
-            y <- tibble::as_tibble(temp_df)
-          } else {
-            temp_df = data.frame(matrix(ncol = 3, nrow = ncol(x[[1]][[vars[j]]])*nrow(x[[1]][[vars[j]]])))
-            colnames(temp_df)=c("z","x","y")
-            temp_df$z = c(x[[i]][[vars[j]]])
-            y <- tibble::as_tibble(temp_df)
-          }
-          temp_1 = rev(rep(x$Y@grid[[vars[j]]][, 1], L))
-          temp_2 = rep(x$Y@grid[[vars[j]]][, 2], L)
-          y[,2] <- temp_2
-          y[,3] <- temp_1
-          y$Time <- as.factor(rep(1:L, each = nrow(x$Y@grid[[vars[j]]])))
-          direction <- 1
-          if(isTRUE(reverse_color_palette)) direction <- -1;
-         print(ggplotly(ggplot(y, aes_string("x", "y", fill = "z", frame = "Time")) +
-            geom_tile() +
-            theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-                  panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-              scale_fill_distiller(palette = color_palette, direction = direction) +
-            ggtitle(paste("Singular function", as.character(i), "of variable", as.character(vars[j]))) +
-              scale_x_continuous(name = 'x') + scale_y_continuous(name = 'y')))
-        }
-
+      } else if (type == "lcurves" && x$Y$dimSupp[[vars[j]]] == 2) {
+        warning("The `lcurves` type for 2-dimentional fssa is not developed.")
       }
     }
-
-    if (flag_1 == 1 && flag_2 == 1) {
-      warning("The plots of singular functions for variables observed over one-dimensional domains can be found in the \"plots\" tab while plots of singular functions corresponding to variables observed over two-dimensional domains can be found in the \"viewer\" tab.")
-    }
   } else if (type == "vectors") {
-    if(is.na(main)) main <- "Right Singular vectors"
+    if (is.na(main)) main <- "Right Singular vectors"
     x0 <- c(apply(x$RVectrs[, idx], 2, scale, center = F))
     D0 <- data.frame(
       x = x0,
@@ -240,38 +177,50 @@ plot.fssa <- function(x, d = length(x$values),
     D0$groups <- factor(rep(main1,
       each = K
     ), levels = main1)
-    p1 <- lattice::xyplot(x ~ time |
-      groups, lwd = 2, par.strip.text=list(cex=1.5),
-    data = D0, xlab = "",
-    ylab = "", main = list(main,cex=2),
-    scales = list(x = list(cex=c(1.4,1.4)),
-                  y = list(cex=c(1.4, 1.4), # increase font size
-                           alternating=1,   # axes labels left/bottom
-                           tck = c(1,0))),
-    as.table = TRUE, type = "l"
+    p1 <- xyplot(
+      x ~ time |
+        groups,
+      lwd = lwd, par.strip.text = list(cex = 1.5),
+      data = D0, xlab = "",
+      ylab = "", main = list(main, cex = 2),
+      scales = list(
+        x = list(cex = c(1.4, 1.4)),
+        y = list(
+          cex = c(1.4, 1.4), # increase font size
+          alternating = 1, # axes labels left/bottom
+          tck = c(1, 0)
+        )
+      ),
+      as.table = TRUE, type = "l",
+      ...
     )
     graphics::plot(p1)
   } else if (type == "paired") {
-    if(is.na(main)) main <- "Paired Plot of Right Singular Vectors"
+    if (is.na(main)) main <- "Paired Plot of Right Singular Vectors"
     d_idy <- length(idy)
     if (d_idx != d_idy) stop("The length of idx and idy must be same")
-    x0 <- c(apply(x$RVectrs[, idx[1]:idx[(d_idx-1)]], 2, scale, center = F))
-    y0 <- c(apply(x$RVectrs[, idy[1]:idy[(d_idy-1)]], 2, scale, center = F))
+    x0 <- c(apply(x$RVectrs[, idx[1]:idx[(d_idx - 1)]], 2, scale, center = F))
+    y0 <- c(apply(x$RVectrs[, idy[1]:idy[(d_idy - 1)]], 2, scale, center = F))
     D0 <- data.frame(x = x0, y = y0)
-    main3 <- paste(as.character(idx[1]:idx[(d_idx-1)]), "vs", as.character(idy[1]:idy[(d_idy-1)]))
+    main3 <- paste(as.character(idx[1]:idx[(d_idx - 1)]), "vs", as.character(idy[1]:idy[(d_idy - 1)]))
     D0$groups <- factor(rep(main3, each = K), levels = main3)
-    p1 <- lattice::xyplot(x ~ y | groups,
-      data = D0, xlab = "", par.strip.text=list(cex=1.4), lwd = 2,
-      ylab = "", main = list(main,cex=2.0),
-      scales = list(x = list(cex=c(1.4,1.4)),
-                    y = list(cex=c(1.4, 1.4), # increase font size
-                             alternating=1,   # axes labels left/bottom
-                             tck = c(1,0))),
-      as.table = TRUE, type = "l"
+    p1 <- xyplot(x ~ y | groups,
+      data = D0, xlab = "", par.strip.text = list(cex = 1.4), lwd = lwd,
+      ylab = "", main = list(main, cex = 2.0),
+      scales = list(
+        x = list(cex = c(1.4, 1.4)),
+        y = list(
+          cex = c(1.4, 1.4), # increase font size
+          alternating = 1, # axes labels left/bottom
+          tck = c(1, 0)
+        )
+      ),
+      as.table = TRUE, type = "l",
+      ...
     )
     graphics::plot(p1)
   } else if (type == "periodogram") {
-    if(is.na(main)) main = "Periodogram";
+    if (is.na(main)) main <- "Periodogram"
     ff <- function(x) {
       I <- abs(fft(x) / sqrt(K))^2
       P <- (4 / K) * I
@@ -285,15 +234,17 @@ plot.fssa <- function(x, d = length(x$values),
     D0$groups <- factor(rep(main1,
       each = (floor(K / 2) + 1)
     ), levels = main1)
-    p1 <- lattice::xyplot(x ~ time |
-      groups,
-    data = D0, xlab = "",
-    ylab = "", main = main,
-    scales = list(y = list(at = NULL, relation = "same")),
-    as.table = TRUE, type = "l"
+    p1 <- xyplot(
+      x ~ time |
+        groups,
+      data = D0, xlab = "", lwd = lwd,
+      ylab = "", main = main,
+      scales = list(y = list(at = NULL, relation = "same")),
+      as.table = TRUE, type = "l",
+      ...
     )
     graphics::plot(p1)
   } else {
-    stop("Unsupported type of fssa plot!")
+    stop("Unsupported type of fssa plot!!")
   }
 }

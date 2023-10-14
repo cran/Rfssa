@@ -11,28 +11,36 @@
 The Rfssa package provides the collection of necessary functions to
 implement functional singular spectrum analysis (FSSA)-based methods for
 analyzing univariate and multivariate functional time series (FTS).
-Univariate and multivariate FSSA are novel, non-parametric methods used to perform decomposition and reconstruction of univariate and multivariate FTS respectively. In addition, the FSSA-based routines may be performed on FTS whose variables are observed over a one or two-dimensional domain. Finally, one may perform FSSA recurrent or FSSA vector forecasting of univariate or multivariate FTS observed over one-dimensional domains. Forecasting of FTS whose variables are observed over domains of dimension greater than one is under development.
+Univariate and multivariate FSSA are novel, non-parametric methods used to perform decomposition and reconstruction of univariate and multivariate FTS respectively. In addition, the FSSA-based routines may be performed on FTS whose variables are observed over a one or two-dimensional domain. Finally, one may perform FSSA recurrent or FSSA vector forecasting of univariate or multivariate funts observed over one-dimensional domains. Forecasting of funts whose variables are observed over domains of dimension greater than one is under development.
 
 # Summary
 
-The use of the package begins by defining an fts object by providing the constructor with the raw data, basis specifications, and grid specifications. We note that the FTS object may be univariate or multivariate and variables may be observed
-over one (curves) or two-dimensional (images) domains. Validity checking of the S4 object constructor inputs is included to help guide the user. The user may leverage the plot.fts method to visualize the fts object. A variety of plotting options are available for variables observed over a one-dimensional domain and a visuanimation is offered for variables observed over a two-dimensional domain. Next, the user provides the fts objectand a chosen lag parameter to the FSSA routine (fssa) to obtain the decomposition. We note that the decomposition function leverages the RSpectra and RcppEigen R packages, and the Eigen C++ package to speed up the routine. The plot.fssa method may be used to visualize the results of the decomposition and to choose an appropriate grouping of the eigentriples for reconstruction (freconstruct) or forecasting (fforecast). The freconstruct routine can be used to reconstruct a list of fts objects specified by the grouping while the fforecast function returns a list of fts objects that contain predictions of the signals specified by the grouping. We note that when forecasting is performed, usually the user specifies one group that captures the assumed deterministic, extracted signal that is found within the FTS and all other modes of variation are excluded. We also note that currently, forecasting only supports FTS whose variables are observed over a one-dimensional domain with two-dimensional domain forecasting to be added in the future.
+The use of the package begins by defining an `funts' object by providing the constructor with the raw data, basis specifications, and grid specifications. We note that the FTS object may be univariate or multivariate and variables may be observed
+over one (curves) or two-dimensional (images) domains. Validity checking of the S4 object constructor inputs is included to help guide the user. The user may leverage the plot.funts method to visualize the funts object. A variety of plotting options are available for variables observed over a one-dimensional domain and a visuanimation is offered for variables observed over a two-dimensional domain. Next, the user provides the funts object and a chosen lag parameter to the FSSA routine (fssa) to obtain the decomposition. We note that the decomposition function leverages the RSpectra and RcppEigen R packages, and the Eigen C++ package to speed up the routine. The plot.fssa method may be used to visualize the results of the decomposition and to choose an appropriate grouping of the eigentriples for reconstruction (freconstruct) or forecasting (fforecast). The freconstruct routine can be used to reconstruct a list of funts objects specified by the grouping while the fforecast function returns a list of funts objects that contain predictions of the signals specified by the grouping. The user may also calculate the bootstrapped prediction interval for forecasts using the fpredinterval function. We note that when forecasting is performed, usually the user specifies one group that captures the assumed deterministic, extracted signal that is found within the FTS and all other modes of variation are excluded. We also note that currently, forecasting only supports FTS whose variables are observed over a one-dimensional domain with two-dimensional domain forecasting to be added in the future.
 
 Other functionalities offered by the package include:
 <ul>
-  <li> FTS arithmetic - Allows the user to perform FTS-FTS arithmetic and FTS-scalar arithmetic (such as addition, subtraction, etc.).</li>
-  <li> eval.fts - Allows the user to evaluate the FTS object over a new specified grid.</li>
+  <li> funts arithmetic - Allows the user to perform FTS-FTS arithmetic and FTS-scalar arithmetic (such as addition, subtraction, etc.).</li>
   <li> load_github_data - Allows the user to load any .RData file hosted on GitHub including the Callcenter, Jambi,
 and Montana datasets.</li>
-  <li> fwcor - Returns the weighted correlation matrix corresponding to the decomposition of an FTS.</li>
-  <li> cor.fts - Returns the correlation between two fts objects.</li>
   <li> launchApp - Launches the built-in R Shiny app that can be used to interactively explore the FSSA-based routines on various datasets.</li>
 </ul>
 
 # Updates
 
-The first update we include in this version of the Rfssa R package, is the eval.fts method used to evaluate an fts object over a new, specified grid. We updated the plot.fts method to allow for custom tick labels and new choices in visuanimation colors (for variables observed over two-dimensional domains) that are offered by the ggplot2 package.
-We have also updated the plot.fssa method to allow for new choices in visuanimation colors offered by the ggplot2 package when plotting left singular functions that correspond with variables observed over two-dimensional domains. A user may now specify a character vector that contains the time when each observation is made when building an fts object and we improved various plot fonts for readability. Finally, we include many other small updates that further improve plotting quality, code readability, documentation improvements, and other details that add to the professionalism of the package.
+- The name `fts` has been modified to `funts` to avoid any clashes with the  package. Furthermore, the class of `funts` has bee transitioned from S4 to S3 to ensure better compatibility and consistency within the package.
+These changes are aimed at preventing any conflicts when using `Rfssa` in conjunction with other packages like `rainbow`, enhancing the user experience.
+
+-  All the methods for `funts` have re-implemented and introduced new generic methods such as `length()`, `print()`, and `plot()` to provide a more comprehensive and user-friendly interface. 
+
+- The `plot()` method for `funts` class objects (formerly `fts`) has been renamed to `plotly_funts()`. This new name more accurately reflects the type of plots it generates, which are based on `plotly` graphics.
+
+- An S3 class named `fforecast` is added to encapsulate the output of the `fforecast()` function. This class is designed to provide a more organized and intuitive structure for handling forecasted functional time series (FTS) data.
+
+- Three convenient functions, namely `loadJambiData()`, `loadCallcenterData()`, and `loadMontanaData()` are added. These functions have been designed to simplify the process of acquiring the raw dataset from the web and loading it into the global environment.
+    
+- In the latest version of the package, two new parameters, start and end, have been introduced in the `funts` function to capture the duration of the time series. These parameters provide flexibility for users to specify time information in a more structured and standardized manner. Users can now set `start` and `end` using various time and date classes such as `Date`, `POSIXct`, or `POSIXt`, allowing for better representation of time.
+
 
 # README Notes
 

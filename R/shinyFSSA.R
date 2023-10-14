@@ -5,20 +5,23 @@ ui.fssa <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       width = 3, tags$head(tags$style(type = "text/css", ".well { max-width: 300px; }")),
-      radioButtons("bs.fr", "Choose Basis:", choices = c("B-spline", "Fourier"), selected = "B-spline", inline = TRUE),
-      uiOutput("xdeg", width = "250px"), uiOutput("xdf", width = "250px"),
+      tags$div(title = "Pick your functional basis", radioButtons("bs.fr", "Choose Basis:", choices = c("B-spline", "Fourier"), selected = "B-spline", inline = TRUE)),
+      tags$div(title = "Pick the degree of polynomial for the B-spline", uiOutput("xdeg", width = "250px")),
+      tags$div(title = "Pick the number of basis", uiOutput("xdf", width = "250px")),
       tags$hr(style = "border-color: red;", width = "150px"),
-      column(6, uiOutput("g")), column(6, uiOutput("sg")), column(6, uiOutput("d")), column(6, uiOutput("dmd")),
-      sliderInput("mssaL", HTML("Win.L. (MSSA):"), min = 1, max = 50, value = 50, step = 1, width = "210px"),
-      sliderInput("fssaL", HTML("Win.L. (FSSA):"), min = 1, max = 50, value = 20, step = 1, width = "210px"),
-      column(6, uiOutput("run.fpca")), column(6, uiOutput("run.ssa"))
+      column(6, tags$div(title = "Grouping used for the SSA algorithms", textInput("g", "Groups", value = "1:2"))),
+      column(6, tags$div(title = "Pick the groups fo reconstruction", uiOutput("sg"))),
+      column(6, tags$div(title = "The dimensions used in FPCA, SSA and FSSA", uiOutput("d"))),
+      column(6, tags$div(title = "See Manual", checkboxGroupInput("dmd", "Functions", choices = c("Demean" = "dmd", "Dbl Range" = "dbl")))),
+      tags$div(title = "Window length parameter used in SSA and FSSA", sliderInput("ssaL", HTML("Win.L. (SSA):"), min = 1, max = 50, value = 20, step = 1, width = "210px")),
+      column(6, uiOutput("run.ssa"))
     ),
     mainPanel(
       width = 9, tags$style(type = "text/css", ".shiny-output-error { visibility: hidden; }", ".shiny-output-error:before { visibility: hidden; },"), # ".nav-tabs {font-size: 10px}"),
       tabsetPanel(
         id = "Panel", type = "tabs",
         tabPanel(
-          title = "Data", value = "Data",
+          title = "Input Data", value = "Data",
           column(12, uiOutput("ts.selected", align = "center"), style = "color:red;"),
           fluidRow(
             column(4, radioButtons("f.choice", "Choose from:", c("Server" = "server", "Upload" = "upload", "Simulate" = "sim"), selected = "sim", inline = TRUE, width = "250px")),
@@ -33,7 +36,7 @@ ui.fssa <- fluidPage(
           column(8, plotOutput("basis.desc", height = 600, width = 600)), column(4, uiOutput("basis.n", width = "300px"))
         ),
         tabPanel(
-          "Data Description (SSA Summary)",
+          "Data Analysis",
           column(4, uiOutput("desc", width = "250px")), column(4, uiOutput("as.choice", width = "400px"), uiOutput("run.fda.gcv", width = "200px"), uiOutput("rec.type", width = "300px")), column(2, uiOutput("freq")), column(2, uiOutput("sts.choice")),
           fluidRow(
             column(
@@ -55,19 +58,13 @@ ui.fssa <- fluidPage(
   )
 )
 
-#' @importFrom plotly renderPlotly plotlyOutput
-#' @importFrom fda pca.fd eval.fd
-#' @importFrom graphics abline axis par plot points polygon
-#' @importFrom stats fft integrate rnorm sd ts.plot density
-#' @importFrom utils head read.table
-#' @import Rssa
-# Define server logic required to draw a histogram
-
+# Define server logic required to run fssa
 server.fssa <- function(input, output, clientData, session) {
   iTs <- reactiveVal(list())
   iTrs <- reactiveVal(list())
   iXs <- reactiveVal(list())
   itmp <- reactiveVal(0)
+  previous_s.plot <- reactiveVal(0)
   df <- 100
   vf <- 20
   T <- 100
@@ -76,7 +73,7 @@ server.fssa <- function(input, output, clientData, session) {
   outputOptions(output, "flag_plotly", suspendWhenHidden = FALSE)
   outputOptions(output, "flag_plot", suspendWhenHidden = FALSE)
   hideTab(inputId = "Panel", target = "Forecasting")
-
+  updateTabsetPanel(session, "Panel", selected = "Manual")
 
   rfar <- function(N, norm, psi, Eps, basis) {
     # Create Corresponding matrix of an integral (kernel) operator
@@ -142,7 +139,7 @@ server.fssa <- function(input, output, clientData, session) {
     tau <- seq(0, 1, length = T)
     t <- 1:input$t.len
     Trs <- outer(tau, t, FUN = Tr)
-    set.seed(T * input$t.len * input$a.f * input$n.sd) # set.seed(10)
+    set.seed(T * input$t.len * input$a.f * input$n.sd)
     noise <- Z <- matrix(rnorm(input$t.len * T, 0, input$n.sd), nrow = T)
     if (input$noise.t == "ar1") {
       if (input$noise.p) {
@@ -183,6 +180,10 @@ server.fssa <- function(input, output, clientData, session) {
     updateTabsetPanel(session, "Panel", selected = "Data")
     updateCheckboxGroupInput(session, "s.plot", selected = "")
   })
+  observeEvent(input$s.plot, {
+    if (previous_s.plot() == 0 && (sum(c("ssa", "fssa") %in% input$s.plot))) previous_s.plot(1)
+    if (previous_s.plot() == 1 && !(sum(c("ssa", "fssa") %in% input$s.plot))) previous_s.plot(0)
+  })
   observeEvent(input$run.ssa, {
     showTab(inputId = "Panel", target = "Forecasting")
   })
@@ -198,21 +199,13 @@ server.fssa <- function(input, output, clientData, session) {
     sliderInput("xdf", paste("Deg. of freedom of", input$bs.fr, "Basis:"), min = ifelse(input$bs.fr == "B-spline", input$xdeg + 1, 3), max = df, value = vf, step = ifelse(input$bs.fr == "B-spline", 1, 2), width = "250px")
   })
 
-  output$g <- renderUI({
-    textInput("g", "Groups", value = "1:2")
-  })
-
   output$sg <- renderUI({
     m <- length(eval(parse(text = paste0("list(", input$g, ")"))))
     sliderInput("sg", "Select G:", min = 1, max = m, value = c(1, m), step = 1)
   })
 
-  output$dmd <- renderUI({
-    checkboxGroupInput("dmd", "Functions", choices = c("Demean" = "dmd", "Dbl Range" = "dbl")) # ,'Heat plot'='hp'))
-  })
-
   output$d <- renderUI({
-    sliderInput("d", "d", min = 1, max = min(input$fssaL, input$mssaL), value = c(1, 2), step = 1)
+    sliderInput("d", "d", min = 1, max = input$ssaL, value = c(1, 2), step = 1)
   })
 
   output$run.ssa <- renderUI({
@@ -222,29 +215,27 @@ server.fssa <- function(input, output, clientData, session) {
     actionButton("run.ssa", paste("run (F)SSA"))
   })
 
-  output$run.fpca <- renderUI({
-    return()
-    if ((input$f.choice == "upload" && is.null(input$file)) || (input$f.choice == "sim" && !length(input$model))) {
-      return()
+  run_ssa <- eventReactive(
+    {
+      input$run.ssa
+      previous_s.plot()
+    },
+    {
+      withProgress(message = "SSA.FSSA: Running", value = 0, {
+        if (input$bs.fr == "B-spline") {
+          bas.fssa <- fda::create.bspline.basis(c(0, 1), nbasis = input$xdf, norder = input$xdeg + 1)
+        } else {
+          bas.fssa <- fda::create.fourier.basis(c(0, 1), nbasis = input$xdf)
+        }
+        tau <- seq(0, 1, length = nrow(iTs()))
+        Uf <- fssa(funts(X = iTs(), basisobj = bas.fssa), input$ssaL)
+        Us <- ssa(t(iTs()), input$ssaL, kind = "mssa")
+        return(list(Uf = Uf, Us = Us, tau = tau, bas.fssa = bas.fssa))
+      })
     }
-    actionButton("run.fpca", paste("run (D)FPCA"))
-  })
+  )
 
-  run_ssa <- eventReactive(input$run.ssa, {
-    withProgress(message = "SSA.FSSA: Running", value = 0, {
-      if (input$bs.fr == "B-spline") {
-        bas.fssa <- fda::create.bspline.basis(c(0, 1), nbasis = input$xdf, norder = input$xdeg + 1)
-      } else {
-        bas.fssa <- fda::create.fourier.basis(c(0, 1), nbasis = input$xdf)
-      }
-      tau <- seq(0, 1, length = nrow(iTs()))
-      Uf <- fssa(Rfssa::fts(X = list(iTs()), B = list(eval.basis(tau, bas.fssa)), grid = list(tau)), input$fssaL)
-      Us <- ssa(t(iTs()), input$mssaL, kind = "mssa")
-      return(list(Uf = Uf, Us = Us, tau = tau, bas.fssa = bas.fssa))
-    })
-  })
-
-  run_fpca <- function() { # eventReactive(input$run.fpca, {
+  run_fpca <- function() {
     withProgress(message = "(D)FPCA: Running", value = 0, {
       if (input$bs.fr == "B-spline") {
         bas.fssa <- fda::create.bspline.basis(c(0, 1), nbasis = input$xdf, norder = input$xdeg + 1)
@@ -259,20 +250,19 @@ server.fssa <- function(input, output, clientData, session) {
       # d.fpca <- fts.dpca(Y, Ndpc = input$d[2]); dfpca.re <- eval.fd(tau,d.fpca$Xhat)
       return(list(fpca = fpca.re, dfpca = fpca.re))
     })
-  } # )
+  }
 
   output$s.choice <- renderUI({
     if (input$f.choice != "server") {
       return()
     }
-    # if (!length(iXs())) {load(system.file("shiny/data", "servshiny.rda", package = "Rfssa")); iXs(Xs[-6])}
     if (!length(iXs())) {
-      load_github_data("https://github.com/haghbinh/Rfssa/blob/master/data/Callcenter.RData")
-      load_github_data("https://github.com/haghbinh/Rfssa/blob/master/data/Jambi.RData")
-      Callcenter <- get("Callcenter", envir = .GlobalEnv)
+      loadCallcenterData()
+      loadJambiData()
+      callcenter <- get("callcenter", envir = .GlobalEnv)
       Jambi <- get("Jambi", envir = .GlobalEnv)
       Xs <- list()
-      Xs[[1]] <- matrix(sqrt(Callcenter$calls), nrow = 240)
+      Xs[[1]] <- matrix(sqrt(callcenter$calls), nrow = 240)
       Xs[[2]] <- Xs[[3]] <- matrix(NA, nrow = 128, ncol = dim(Jambi$NDVI)[3])
       for (i in 1:dim(Jambi$NDVI)[3]) {
         Xs[[2]][, i] <- density(Jambi$NDVI[, , i], from = 0, to = 1, n = 128)$y
@@ -310,7 +300,7 @@ server.fssa <- function(input, output, clientData, session) {
     if (input$f.choice != "sim") {
       return()
     }
-    choices <- c("f(tau)" = "f1", "g(tau)" = "f2", "f(tau) + g(tau)" = "f12")
+    choices <- c("f(\u03C4)" = "f1", "g(\u03C4)" = "f2", "f(\u03C4) + g(\u03C4)" = "f12")
     radioButtons("model", "Model:", choices = choices, selected = "f1", inline = TRUE, width = "250px")
   })
 
@@ -378,13 +368,12 @@ server.fssa <- function(input, output, clientData, session) {
     }
     if ("dmd" %in% input$dmd) {
       Ts <- Ts - mean(Ts)
-      if (input$f.choice == "sim") Trs <- Trs - mean(Trs)
-    } # {Ts <<- scale(Ts,scale=F); if (input$f.choice=="sim") Trs <<- scale(Trs,scale=F)}
-    # updateSliderInput(session, "mssaL", max=min(ncol(Ts),trunc(nrow(Ts)/2))); updateSliderInput(session, "fssaL", max=min(ncol(Ts),trunc(nrow(Ts)/2)))
-    updateSliderInput(session, "mssaL", max = trunc(ncol(Ts) / 2))
-    updateSliderInput(session, "fssaL", max = min(120, trunc(ncol(Ts) / 2)))
+      if (input$f.choice == "sim") simul$Trs <- simul$Trs - mean(simul$Trs)
+    }
+    updateSliderInput(session, "ssaL", max = min(120, trunc(ncol(Ts) / 2)))
     updateSelectInput(session, "desc", selected = "ts")
     updateSliderInput(session, "dimn", max = min(10, ncol(Ts)), value = min(2, ncol(Ts)))
+    text <- mark("test")
     text <- paste("<b>", ncol(Ts), "Time series of length", nrow(Ts), "</b>")
     if (input$f.choice == "sim") iTrs(simul$Trs)
     iTs(Ts)
@@ -431,9 +420,6 @@ server.fssa <- function(input, output, clientData, session) {
     ts.plot(Bx, col = 8, main = "B-spline Basis", xlab = "Grid Points", gpars = list(xaxt = "n"))
     points(Bx[, input$basis.n], type = "l", lwd = 2, col = 2)
     axis(1, trunc(summary(1:nrow(Bx))[-4]))
-    # b <- plot_ly(x=xs,y=Bx[,1],mode='lines',name = 'B1')
-    # for (j in 2:ncol(Bx)) b <- b %>% add_lines(y=Bx[,j], mode = 'lines', name =paste0("B",j))
-    # b
   })
 
   output$desc <- renderUI({
@@ -445,7 +431,7 @@ server.fssa <- function(input, output, clientData, session) {
       FSSA = c("Scree" = "fssa.scree", "W.Correlation" = "fssa.wcor", "Paired" = "fssa.pair", "Singular Vectors" = "fssa.singV", "Periodogram" = "fssa.perGr", "Singular Functions" = "fssa.singF", "Reconstruction" = "fssa.reconst"),
       SSA = c("Scree" = "ssa.scree", "W.Correlation" = "ssa.wcor", "Paired" = "ssa.pair", "Singular Vectors" = "ssa.vec", "Functions" = "ssa.funs", "Reconstruction" = "ssa.reconst")
     )
-    selectInput("desc", "Select", choices = choices, width = "250px")
+    selectInput("desc", "Select Plot Type", choices = choices, width = "250px")
   })
 
   output$as.choice <- renderUI({
@@ -464,7 +450,7 @@ server.fssa <- function(input, output, clientData, session) {
     if ((input$f.choice == "upload" && is.null(input$file)) || (input$f.choice == "sim" && !length(input$model))) {
       return()
     }
-    if (((input$desc == "ts" && input$as.choice != "all")) && !(input$s.plot == "bf" && length(input$s.plot) == 1) && length(input$s.plot)) {
+    if (((input$desc == "ts" && input$as.choice != "all")) && !("bf" %in% input$s.plot && length(input$s.plot) == 1) && length(input$s.plot)) {
       if (input$as.choice == "single") {
         sliderInput("sts.choice", "Choose function:", min = 1, max = ncol(iTs()), value = ifelse(is.null(input$sts.choice), 1, input$sts.choice), step = 1, width = "400px")
       } else {
@@ -488,14 +474,14 @@ server.fssa <- function(input, output, clientData, session) {
       selectInput("rec.type", "Type", choices = c("Heat Plot" = "heatmap", "Regular Plot" = "line", "3D Plot (line)" = "3Dline", "3D Plot (surface)" = "3Dsurface"), width = "250px")
     } else {
       selectInput("rec.type", "Type", choices = c("Heat Plot" = "heatmap", "Regular Plot" = "line", "3D Plot (line)" = "3Dline", "3D Plot (surface)" = "3Dsurface"), width = "250px")
-    } # ,"image2D"="3","ribbon3D"="1","ribbon3D-Curtain"="2"
+    }
   })
 
   output$freq <- renderUI({
     if ((input$f.choice == "upload" && is.null(input$file)) || (input$f.choice == "sim" && !length(input$model))) {
       return()
     }
-    if (((input$desc == "ts" && input$as.choice == "mult")) && !(input$s.plot == "bf" && length(input$s.plot) == 1) && length(input$s.plot)) {
+    if (((input$desc == "ts" && input$as.choice == "mult")) && !("bf" %in% input$s.plot && length(input$s.plot) == 1) && length(input$s.plot)) {
       sliderInput("freq", "Period:", min = 1, max = trunc(ncol(iTs()) / 2), value = ifelse(is.null(input$freq), 1, input$freq), step = 1, width = "200px")
     }
   })
@@ -509,7 +495,7 @@ server.fssa <- function(input, output, clientData, session) {
     } else if (input$desc != "ts") {
       return()
     }
-    choices <- c("Time Series" = "ts", "True Functions" = "tf", "Basis Func." = "bf", "Smoothing" = "bss", "Functional PCA" = "fpca", "Multivariate SSA" = "ssa", "Functional SSA" = "fssa") # , "Dyn. Func. PCA" = "dfpca"
+    choices <- c("Time Series (Raw Data)" = "ts", "True Functions" = "tf", "Functional SSA" = "fssa", "Multivariate SSA" = "ssa", "Functional PCA" = "fpca", "Basis Functions" = "bf", "Smoothing" = "bss") # , "Dyn. Func. PCA" = "dfpca"
     if (input$f.choice != "sim") {
       choices <- choices[-2]
     }
@@ -563,7 +549,6 @@ server.fssa <- function(input, output, clientData, session) {
       GCV <- NULL
       df <- min(df, nrow(iTs()))
       if (input$bs.fr == "B-spline") nbasis <- (input$xdeg + 1):(df - 1) else nbasis <- seq(3, df, by = 2)
-      # nbasis <- nbasis[1:min(max(nbasis),nrow(iTs())-(input$xdeg+1))]
       for (l in 1:length(nbasis)) {
         if (input$bs.fr == "B-spline") {
           bas.fssa <- fda::create.bspline.basis(c(0, 1), nbasis = nbasis[l], norder = input$xdeg + 1)
@@ -625,7 +610,6 @@ server.fssa <- function(input, output, clientData, session) {
       }
       Bs <- Bs * sd(Ts)
     }
-    # clust <- hclust(dist(t(Ts)),method="ward.D"); clcol <- cutree(clust,k=input$dimn);
     if (substr(input$desc, 1, 4) == "fssa" || sum(c("fssa", "ssa") %in% input$s.plot) || substr(input$desc, 1, 3) == "ssa") {
       sr <- run_ssa()
       input.g <- eval(parse(text = paste0("list(", input$g, ")")))
@@ -633,12 +617,12 @@ server.fssa <- function(input, output, clientData, session) {
       isolate(sr$Qs <- reconstruct(sr$Us, groups = input.g))
       isolate(sr$Qf <- freconstruct(sr$Uf, input.g))
       Qf <- sr$Qf[[1]]
-      Qf@C[[1]][, ] <- 0
+      Qf$coefs[[1]][, ] <- 0
       for (i in input$sg[1]:input$sg[2]) {
         Qs <- Qs + t(sr$Qs[[i]])
-        Qf@C[[1]] <- Qf@C[[1]] + sr$Qf[[i]]@C[[1]]
+        Qf$coefs[[1]] <- Qf$coefs[[1]] + sr$Qf[[i]]$coefs[[1]]
       }
-      Q <- Qf@B[[1]] %*% Qf@C[[1]]
+      Q <- Qf$B_mat[[1]] %*% Qf$coefs[[1]]
     }
     if ("fpca" %in% input$s.plot || "dfpca" %in% input$s.plot) {
       f.pca <- run_fpca()
@@ -661,7 +645,6 @@ server.fssa <- function(input, output, clientData, session) {
       } else if (input$desc == "fssa.singF") {
         plot(sr$Uf, type = ifelse(is.null(input$rec.type), "lheats", input$rec.type), idx = input$d[1]:input$d[2])
       }
-      # else if (input$desc=="fssa.reconst" && input$rec.type%in%c("1","2","3")) ftsplot(seq(0, 1, length = nrow(Ts)), 1:ncol(Ts), Qf, space = 0.1, type=as.numeric(input$rec.type), ylab = "tau", xlab = "t", main = "Q")
     } else if (substr(input$desc, 1, 3) == "ssa") {
       if (input$desc == "ssa.scree") {
         plot(sr$Us, type = "values", numvalues = input$d[2])
@@ -732,8 +715,8 @@ server.fssa <- function(input, output, clientData, session) {
       axis(1, trunc(summary(1:nrow(Ts))[-4]))
       if (input$f.choice == "sim" || input$comp.obs) {
         if (input$comp.obs) Ys <- Ts else Ys <- iTrs()
-        if (input$comp.obs) RMSEs <- NULL else RMSEs <- paste(" SNR =", round(sum(Ts[, indx]^2) / sum((Ts[, indx] - Ys[, indx])^2), 4), "\n") # /length(indx)
-        if (input$comp.obs) RMSEs <- NULL else RMSEs <- paste(RMSEs, "RMSE.obs =", round(sqrt(mean((Ts[, indx] - Ys[, indx])^2)), 4), "\n") # /length(indx)
+        if (input$comp.obs) RMSEs <- NULL else RMSEs <- paste(" SNR =", round(sum(Ts[, indx]^2) / sum((Ts[, indx] - Ys[, indx])^2), 4), "\n")
+        if (input$comp.obs) RMSEs <- NULL else RMSEs <- paste(RMSEs, "RMSE.obs =", round(sqrt(mean((Ts[, indx] - Ys[, indx])^2)), 4), "\n")
         if ("bss" %in% input$s.plot) RMSEs <- paste(RMSEs, "RMSE.bs.smooth =", round(sqrt(mean((f.est[, indx] - Ys[, indx])^2)), 4), "\n")
         if ("fpca" %in% input$s.plot) RMSEs <- paste(RMSEs, "RMSE.fpca =", round(sqrt(mean((fpca[, indx] - Ys[, indx])^2)), 4), "\n")
         if ("ssa" %in% input$s.plot) RMSEs <- paste(RMSEs, "RMSE.ssa =", round(sqrt(mean((Qs[, indx] - Ys[, indx])^2)), 4), "\n")
@@ -767,19 +750,19 @@ server.fssa <- function(input, output, clientData, session) {
     input.g <- eval(parse(text = paste0("list(", input$g, ")")))
     if (input$desc == "fssa.reconst") {
       isolate(sr$Qf <- freconstruct(sr$Uf, input.g))
-      Qf <- 0
+      Qf <- funts(X = matrix(0, nrow = nrow(iTs()), ncol = ncol(iTs())), basisobj = sr$bas.fssa, argval = sr$tau)
       for (i in input$sg[1]:input$sg[2]) {
         Qf <- Qf + sr$Qf[[i]]
       }
-      myplot <- plot(Qf, type = input$rec.type)
+      myplot <- plotly_funts(Qf, types = input$rec.type)
     } else {
       isolate(sr$Qs <- reconstruct(sr$Us, groups = input.g))
       Qs <- matrix(0, nrow = nrow(iTs()), ncol = ncol(iTs()))
       for (i in input$sg[1]:input$sg[2]) {
         Qs <- Qs + t(sr$Qs[[i]])
       }
-      Qs <- Rfssa::fts(X = list(Qs), B = list(eval.basis(sr$tau, sr$bas.fssa)), grid = list(sr$tau))
-      myplot <- plot(Qs, type = input$rec.type)
+      Qs <- funts(X = Qs, basisobj = sr$bas.fssa, argval = sr$tau)
+      myplot <- plotly_funts(Qs, types = input$rec.type)
     }
     print(myplot[[1]])
   })
@@ -810,8 +793,8 @@ server.fssa <- function(input, output, clientData, session) {
       sr <- run_ssa()
       input.g <- eval(parse(text = paste0("list(", input$g, ")")))
       fc <- list()
-      if ("recurrent" %in% input$fcast.method) fc$rec <- fforecast(U = sr$Uf, groups = input.g, h = input$fcast.horizon, method = "recurrent")
-      if ("vector" %in% input$fcast.method) fc$vector <- fforecast(U = sr$Uf, groups = input.g, h = input$fcast.horizon, method = "vector")
+      if ("recurrent" %in% input$fcast.method) fc$rec <- fforecast(U = sr$Uf, groups = input.g, len = input$fcast.horizon, method = "recurrent")
+      if ("vector" %in% input$fcast.method) fc$vector <- fforecast(U = sr$Uf, groups = input.g, len = input$fcast.horizon, method = "vector")
       return(fc)
     })
   })
@@ -828,12 +811,13 @@ server.fssa <- function(input, output, clientData, session) {
       return()
     }
     fc <- run_fcast()
-    Qf <- 0
+    Qf <- fc[[1]][[1]]
+    Qf$coefs[[1]][, ] <- 0
     if (length(fc) == 1) i <- 1 else i <- as.numeric(input$fcast.select)
     for (j in input$sg[1]:input$sg[2]) {
       Qf <- Qf + fc[[i]][[j]]
     }
-    myplot <- plot(Qf, type = input$fcast.type)
+    myplot <- plotly_funts(Qf, types = input$fcast.type)
     print(myplot[[1]])
   })
 }

@@ -5,18 +5,15 @@ H <- function(A) {
     .Call(`_Rfssa_H`, A)
 }
 
-#'@importFrom Rcpp sourceCpp
 HLinprod <- function(x, y, G) {
     .Call(`_Rfssa_HLinprod`, x, y, G)
 }
 
-#'@importFrom Rcpp sourceCpp
 HpLinprod <- function(X, Y, G, p) {
     .Call(`_Rfssa_HpLinprod`, X, Y, G, p)
 }
 
 #' @importFrom Rcpp sourceCpp
-#' @useDynLib Rfssa, .registration = TRUE
 NULL
 
 #' @importFrom Rcpp sourceCpp
@@ -31,17 +28,14 @@ NULL
 #'@importFrom Rcpp sourceCpp
 NULL
 
-#'@importFrom Rcpp sourceCpp
 Cofmat <- function(d, L, cx) {
     .Call(`_Rfssa_Cofmat`, d, L, cx)
 }
 
-#'@importFrom Rcpp sourceCpp
 CalculateInverse <- function(A) {
     .Call(`_Rfssa_CalculateInverse`, A)
 }
 
-#'@importFrom Rcpp sourceCpp
 AtimesB <- function(A, B) {
     .Call(`_Rfssa_AtimesB`, A, B)
 }
@@ -66,7 +60,6 @@ Gramm <- function(K, L, p, d_tilde, A, shifter, d) {
     .Call(`_Rfssa_Gramm`, K, L, p, d_tilde, A, shifter, d)
 }
 
-#'@importFrom Rcpp sourceCpp
 mwinprod <- function(X, Y, w, G, p) {
     .Call(`_Rfssa_mwinprod`, X, Y, w, G, p)
 }
