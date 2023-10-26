@@ -5,10 +5,8 @@
 #' @param x an object of class "funts" .
 #'
 #' @examples
-#' \dontrun{
 #' data("Callcenter")
 #' length(Callcenter)
-#' }
 #' @export
 length.funts <- function(x) {
   return(x$N)
@@ -197,14 +195,12 @@ print.funts <- function(x, ...) {
 #' @seealso \code{\link{funts}}
 #'
 #' @examples
-#' \dontrun{
 #' data("Montana")
 #' y <- Montana
 #' u <- seq(0, 23, len = 4)
 #' v <- seq(1, 33, len = 3)
 #' grid <- list(u, list(v, v))
 #' eval.funts(grid, y)
-#' }
 #' @export
 eval.funts <- function(argvals, obj) {
   if (!xor(is.numeric(argvals), is.list(argvals))) stop("Error: Incompatible grid points. It must be a list or numeric object.")
@@ -268,25 +264,14 @@ eval.funts <- function(argvals, obj) {
 #' @importFrom graphics par image axis
 #'
 #' @examples
-#' \dontrun{
 #' # Example with one-dimensional domain
 #' data("Callcenter")
-#' plot(Callcenter,
-#'   lwd = 2, col = "deepskyblue4",
-#'   main = "Call Center Data",
-#'   xlab = "Time (6 minutes aggregated)",
-#'   ylab = "Sqrt of Call Numbers"
-#' )
+#' plot(Callcenter, lwd = 2, col = "deepskyblue4", main = "Call Center Data")
 #'
 #' # Example with two-dimensional domain
 #' data("Montana")
-#' plot(Montana,
-#'   obs = 2,
-#'   main = c("Temperature Curves", "NDVI Images,"),
-#'   xlab = c("Time", "Longitude"),
-#'   ylab = c("Normalized Temperature (\u00B0C)", "Latitude")
-#' )
-#' }
+#' plot(Montana, obs = 2, main = c("Temperature Curves", "NDVI Images,"))
+#'
 #' @seealso \code{\link{funts}}, \code{\link{Callcenter}}, \code{\link{Montana}}
 #' @importFrom graphics matplot
 #'
