@@ -1,7 +1,7 @@
 Package: Rfssa
 Type: Package
 Title: Functional Singular Spectrum Analysis
-Version: 3.0.2
+Version: 3.1.0
 Authors@R: c(
     person("Hossein", "Haghbin", email = "haghbin@pgu.ac.ir", role = c("aut", "cre"), comment = c(ORCID = "0000-0001-8416-2354")),
     person("Jordan", "Trinka", email = "jordantrinka4@hotmail.com", role = "aut"),
@@ -23,9 +23,9 @@ Suggests: knitr
 Depends: R (>= 4.0.0)
 Repository: CRAN
 NeedsCompilation: yes
-Packaged: 2023-10-26 20:06:57 UTC; Hossein
+Packaged: 2024-01-10 16:36:07 UTC; Hossein
 Author: Hossein Haghbin [aut, cre] (<https://orcid.org/0000-0001-8416-2354>),
   Jordan Trinka [aut],
   Seyed Morteza Najibi [aut],
   Mehdi Maadooliat [aut] (<https://orcid.org/0000-0002-5408-2676>)
-Date/Publication: 2023-10-26 21:20:02 UTC
+Date/Publication: 2024-01-10 17:13:12 UTC

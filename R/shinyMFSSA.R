@@ -286,10 +286,8 @@ server.mfssa <- function(input, output, clientData, session) {
       return()
     }
     if (!length(iXs())) {
-      loadCallcenterData()
-      loadJambiData()
-      callcenter <- get("callcenter", envir = .GlobalEnv)
-      Jambi <- get("Jambi", envir = .GlobalEnv)
+      callcenter <- loadCallcenterData()
+      Jambi <- loadJambiData()
 
       Xs <- list()
       Xs[[1]] <- matrix(sqrt(callcenter$calls), nrow = 240)
@@ -713,10 +711,8 @@ server.mfssa <- function(input, output, clientData, session) {
       if (input$desc == "mfssa.scree") {
         plot(sr$mUf, type = "values", d = input$d[2])
       } else if (input$desc == "mfssa.wcor") {
-        mfwcor <- fwcor(sr$mUf, groups = input$d[1]:input$d[2])
-        wplot(W = mfwcor, cuts = 10)
-      } # plot(sr$mUf,type="wcor",groups=input$d[1]:input$d[2])
-      else if (input$desc == "mfssa.pair") {
+        plot(sr$mUf, type = "wcor", groups = input$d[1]:input$d[2])
+      } else if (input$desc == "mfssa.pair") {
         plot(sr$mUf, type = "paired", idx = input$d[1]:input$d[2])
       } else if (input$desc == "mfssa.singV") {
         plot(sr$mUf, type = "vectors", idx = input$d[1]:input$d[2])

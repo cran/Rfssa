@@ -89,6 +89,7 @@ plotly_funts(Callcenter, type = "3Dsurface", main = "Callcenter Data")
 
 plotly_funts(Callcenter, type = "heatmap", main = "Callcenter Data")
 
+
 data("Montana") # Multivariate FTS example
 plotly_funts(Montana[1:100],
   main = c("Temperature Curves", "NDVI Images"),
